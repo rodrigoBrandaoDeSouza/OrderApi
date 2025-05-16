@@ -57,7 +57,7 @@ dotnet run --project src/PedidosApi.API
 
 5. **Acesse a documentação Swagger:**
 
-[http://localhost:5000/swagger](http://localhost:5000/swagger)
+[http://localhost:5160/swagger](http://localhost:5160/swagger)
 
 ---
 
