@@ -9,10 +9,8 @@ namespace Orders.Infra.Data
 {
     public class OrdersApiDbContext : IdentityDbContext
     {
-        public OrdersApiDbContext(DbContextOptions<OrdersApiDbContext> options)
-        : base(options)
-        {
-        }
+        public OrdersApiDbContext(DbContextOptions<OrdersApiDbContext> options): base(options){ }
+
         public DbSet<Order> Orders { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
@@ -22,7 +20,6 @@ namespace Orders.Infra.Data
             modelBuilder.Entity<Order>()
                 .ToTable("Orders")
                 .HasIndex(x => x.Id);
-
         }
 
         public async Task SeedAsync(IServiceProvider serviceProvider)
