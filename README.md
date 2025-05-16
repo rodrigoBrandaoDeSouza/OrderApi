@@ -29,7 +29,8 @@ Sistema completo para gerenciamento de pedidos com autenticação JWT, filtros a
 
 - [.NET 9 SDK](https://dotnet.microsoft.com/download)  
 - SQL Server (ou LocalDB)  
-- Visual Studio 2022 ou VS Code  
+- Visual Studio 2022 ou VS Code
+- A Instância padrão do banco é (localdb)\MSSQLLocalDB. Você pode conectar pelo SQL Management Studio ou Azure Data Studio.
 
 ### 🚀 Passo a Passo
 
