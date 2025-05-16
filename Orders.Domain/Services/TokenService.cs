@@ -25,7 +25,6 @@ namespace Orders.Domain.Services
             new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString())
         };
 
-            // Adiciona roles como claims
             foreach (var role in roles)
             {
                 claims.Add(new Claim(ClaimTypes.Role, role));

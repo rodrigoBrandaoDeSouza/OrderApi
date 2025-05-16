@@ -4,7 +4,6 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
 using Orders.Api.Middlewares;
-using Orders.Api.Swagger;
 using Orders.Domain.Interfaces;
 using Orders.Infra;
 using Orders.Infra.Data;
@@ -12,9 +11,7 @@ using System.Text;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// Add services to the container.
-
-builder.Services.AddDbContext<Orders.Infra.Data.OrdersApiDbContext>(options =>
+builder.Services.AddDbContext<OrdersApiDbContext>(options =>
 {
     options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection"));
     options.EnableSensitiveDataLogging();
@@ -23,9 +20,32 @@ builder.Services.AddDbContext<Orders.Infra.Data.OrdersApiDbContext>(options =>
 
 builder.Services.AddScoped(typeof(IRepository<>), typeof(Repository<>));
 builder.Services.AddControllers();
-// Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
-builder.Services.AddOpenApi();
 
+builder.Services.AddIdentity<IdentityUser, IdentityRole>()
+    .AddEntityFrameworkStores<OrdersApiDbContext>()
+    .AddDefaultTokenProviders();
+
+var jwtSettings = builder.Configuration.GetSection("JwtSettings");
+builder.Services.AddAuthentication(options =>
+{
+    options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
+    options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
+})
+.AddJwtBearer(options =>
+{
+    options.TokenValidationParameters = new TokenValidationParameters
+    {
+        ValidateIssuer = true,
+        ValidateAudience = true,
+        ValidateLifetime = true,
+        ValidateIssuerSigningKey = true,
+        ValidIssuer = jwtSettings["ValidIssuer"],
+        ValidAudience = jwtSettings["ValidAudience"],
+        IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtSettings["SecretKey"]))
+    };
+});
+
+builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen(options =>
 {
     options.SwaggerDoc("v1", new OpenApiInfo
@@ -54,55 +74,46 @@ builder.Services.AddSwaggerGen(options =>
                 {
                     Type = ReferenceType.SecurityScheme,
                     Id = "JWT"
-                },
-                Scheme = "bearer",
-                Name = "Authorization",
-                In = ParameterLocation.Header
+                }
             },
             new List<string>()
         }
     });
-
-    options.OperationFilter<SwaggerAuthOperationFilter>();
-
-    options.UseAllOfToExtendReferenceSchemas();
-    options.CustomOperationIds(e => $"{e.ActionDescriptor.RouteValues["action"]}");
 });
-builder.Services.AddInfrastructure();
 
-builder.Services.AddIdentity<IdentityUser, IdentityRole>()
-    .AddEntityFrameworkStores<OrdersApiDbContext>()
-    .AddDefaultTokenProviders();
-
-var jwtSettings = builder.Configuration.GetSection("JwtSettings");
-builder.Services.AddAuthentication(options =>
+builder.Services.AddCors(options =>
 {
-    options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
-    options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
-})
-.AddJwtBearer(options =>
-{
-    options.TokenValidationParameters = new TokenValidationParameters
+    options.AddPolicy("AllowAll", policy =>
     {
-        ValidateIssuer = true,
-        ValidateAudience = true,
-        ValidateLifetime = true,
-        ValidateIssuerSigningKey = true,
-        ValidIssuer = jwtSettings["ValidIssuer"],
-        ValidAudience = jwtSettings["ValidAudience"],
-        IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtSettings["SecretKey"]))
-    };
+        policy.AllowAnyOrigin()
+              .AllowAnyHeader()
+              .AllowAnyMethod();
+    });
 });
 
 var app = builder.Build();
 
-// Configure the HTTP request pipeline.
+app.UseHttpsRedirection();
+
+app.UseCors("AllowAll");
+
+app.UseSwagger();
+
+app.UseSwaggerUI(c =>
+{
+    c.SwaggerEndpoint("/swagger/v1/swagger.json", "Orders API v1");
+    c.RoutePrefix = string.Empty; 
+});
+
+app.UseAuthentication();
+app.UseAuthorization();
+
+app.MapControllers();
+
+app.UseMiddleware<ExceptionMiddleware>();
+
 if (app.Environment.IsDevelopment())
 {
-    app.MapOpenApi();
-    app.UseSwagger();
-    app.UseSwaggerUI();
-
     using var scope = app.Services.CreateScope();
     var services = scope.ServiceProvider;
 
@@ -115,17 +126,8 @@ if (app.Environment.IsDevelopment())
     catch (Exception ex)
     {
         var logger = services.GetRequiredService<ILogger<Program>>();
-        logger.LogError(ex, "Ocorreu um erro ao executar o seed no banco de dados");
+        logger.LogError(ex, "Erro ao executar migrações ou seed");
     }
 }
-
-app.UseMiddleware<ExceptionMiddleware>();
-
-app.UseHttpsRedirection();
-
-app.UseAuthentication();
-app.UseAuthorization();
-
-app.MapControllers();
 
 app.Run();
