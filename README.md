@@ -37,7 +37,7 @@ Sistema completo para gerenciamento de pedidos com autenticação JWT, filtros a
 1. **Clone o repositório:**
 
 ```bash
-git clone https://github.com/seu-usuario/pedidos-api.git
+git clone https://github.com/seu-usuario/OrdersApi.git
 ```
 
 2. **Configure a string de conexão:**
@@ -47,18 +47,18 @@ Edite o arquivo `appsettings.json` com os dados do seu SQL Server.
 3. **Execute as migrations:**
 
 ```bash
-dotnet ef database update --project src/PedidosApi.Infra
+dotnet ef database update --project src/Orders.Infra
 ```
 
 4. **Inicie a API:**
 
 ```bash
-dotnet run --project src/PedidosApi.API
+dotnet run --project src/Orders.API
 ```
 
 5. **Acesse a documentação Swagger:**
 
-[http://localhost:5160/swagger](http://localhost:5160/swagger)
+[http://localhost:5160/index.html](http://localhost:5160/index.html)
 
 ---
 
